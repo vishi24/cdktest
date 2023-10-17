@@ -11,6 +11,7 @@ import { ConfigProps } from "./config";
 import { Stack, StackProps } from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as eksconnect from "aws-cdk-lib/aws-eks";
+import * as ssm from "aws-cdk-lib/aws-ssm";
 
 import {
   GatewayVpcEndpointAwsService,
@@ -26,18 +27,29 @@ type AwsEnvStackProps = StackProps & {
 };
 
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
-export class sbrcStack extends cdk.Stack {
+export class eksStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AwsEnvStackProps) {
     //   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-    const vpcId = cdk.Fn.importValue("SB-RCVPC");
+    //const vpcId = cdk.Fn.importValue("SB-RCVPC");
     const { config } = props;
+
+    // const vpcId = ssm.StringParameter.valueFromLookup(
+    //   this,
+    //   "/VpcProvider/VPCID"
+    // );
+    // const vpc = ec2.Vpc.fromLookup(this, "VPC", {
+    //   vpcId: vpcId,
+    // });
+    const vpc = ec2.Vpc.fromLookup(this, "SB-RCVPC", {
+      vpcId: "vpc-09c0c359d8d0537c7",
+    });
 
     //---------------Security Group Creation Start-------------------------------
 
     // Create a Security Group - EKS
     const securityGroupEKS = new ec2.SecurityGroup(this, "EKSSecurityGroup", {
-      vpc: ec2.Vpc.fromLookup(this, "vpc", { vpcId }),
+      vpc: vpc,
       allowAllOutbound: true,
       description: "Security group for RDS-Aurora Postgres",
     });
@@ -57,8 +69,18 @@ export class sbrcStack extends cdk.Stack {
       "arn:aws:iam::370803901956:role/AWSReservedSSO_AWSAdministratorAccess_2961c11892dc6700"
     );
 
+    // Create an IAM role
+    const readonlyRole = new iam.Role(this, "ReadOnlyRole", {
+      assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"), // Example assumed by EC2 instance
+    });
+
+    // Attach a read-only policy (e.g., ReadOnlyAccess)
+    readonlyRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName("ReadOnlyAccess")
+    );
+
     const eksCluster = new eks.FargateCluster(this, "MyCluster", {
-      vpc: ec2.Vpc.fromLookup(this, "vpc", { vpcId }),
+      vpc: vpc,
       vpcSubnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
       version: eks.KubernetesVersion.V1_27,
       securityGroup: securityGroupEKS,
@@ -70,6 +92,7 @@ export class sbrcStack extends cdk.Stack {
       // serviceIpv4Cidr: "10.60.0.0/16",
       albController: {
         version: eks.AlbControllerVersion.V2_5_1,
+        repository: "public.ecr.aws/eks/aws-load-balancer-controller",
       },
     });
 
@@ -85,3 +108,6 @@ export class sbrcStack extends cdk.Stack {
     });
   }
 }
+/////////////////////////////////////////
+// clusterName -- Should come from env file
+//ec2.Peer.ipv4 -- should come from env file

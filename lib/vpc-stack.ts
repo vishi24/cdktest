@@ -11,6 +11,8 @@ import { ConfigProps } from "./config";
 import { Stack, StackProps } from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as eksconnect from "aws-cdk-lib/aws-eks";
+import * as ssm from "aws-cdk-lib/aws-ssm";
+import * as cfn from "aws-cdk-lib/aws-cloudformation";
 
 import {
   GatewayVpcEndpointAwsService,
@@ -29,6 +31,7 @@ export class vpcStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AwsEnvStackProps) {
     //   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
     const { config } = props;
     const cidr = config.CIDR;
 
@@ -63,6 +66,11 @@ export class vpcStack extends cdk.Stack {
         },
       },
     });
+    // create an SSM parameters which store export VPC ID
+    // new ssm.StringParameter(this, "VPCID", {
+    //   parameterName: `/VpcProvider/VPCID`,
+    //   stringValue: vpc.vpcId,
+    // });
 
     new cdk.CfnOutput(this, "ExportedVpcId", {
       value: vpc.vpcId,

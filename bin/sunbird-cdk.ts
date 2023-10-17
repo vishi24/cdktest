@@ -8,6 +8,7 @@ import { eksStack } from "../lib/eks-stack";
 import { getConfig } from "../lib/config";
 import { ConfigProps } from "../lib/config";
 import { Stack, StackProps } from "aws-cdk-lib";
+import { s3Stack } from "../lib/s3-stack";
 
 const config = getConfig();
 
@@ -16,14 +17,22 @@ const config = getConfig();
 // new sbrcStack(app, "sbrcStack");
 // env: { account: '370803901956', region: 'ap-south-1' },
 const app = new cdk.App();
-
 type AwsEnvStackProps = StackProps & {
   config: Readonly<ConfigProps>;
+};
+const MY_AWS_ENV_STACK_PROPS: AwsEnvStackProps = {
+  // Define properties here, for example:
+  env: {
+    region: "ap-south-1",
+    account: "370803901956",
+  },
+  config: config,
 };
 
 //new sbrcStack(app, "sbrcStack");
 //const { configs } = config;
 
-new vpcStack(app, "vpc-stack", config);
-new rdsStack(app, "rds-stack", configs);
-new eksStack(app, "eks-stack", configs);
+new vpcStack(app, "vpcstack", MY_AWS_ENV_STACK_PROPS);
+new rdsStack(app, "rdsstack", MY_AWS_ENV_STACK_PROPS);
+new eksStack(app, "eksstack", MY_AWS_ENV_STACK_PROPS);
+new s3Stack(app, "s3stack", MY_AWS_ENV_STACK_PROPS);
