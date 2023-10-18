@@ -126,9 +126,9 @@ export class eksStack extends cdk.Stack {
         //"global.secrets.ELASTIC_SEARCH_PASSWORD":"abc",
         //"global.secrets.KEYCLOAK_ADMIN_CLIENT_SECRET":"abc",
         // "global.secrets.KEYCLOAK_ADMIN_PASSWORD":"password",
-        "global.secrets.MINIO_SECRET_KEY": "QUtJQVZNVk5DUVlDSTNIRTJCWEM=",
+        "global.secrets.MINIO_SECRET_KEY": "",
         "global.secrets.access_key":
-          "QzJvenppM3ZRUlVsSndDb1RaWVRjSXBHY0VzSFQ2a00vTyt5MXozVw==",
+          "",
         //"global.minio.bucket_key":"abc",
       },
       repository:
