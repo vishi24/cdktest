@@ -12,6 +12,7 @@ import { Stack, StackProps } from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as eksconnect from "aws-cdk-lib/aws-eks";
 import * as ssm from "aws-cdk-lib/aws-ssm";
+import * as helm from "aws-cdk-lib/aws-eks";
 
 import {
   GatewayVpcEndpointAwsService,
@@ -85,7 +86,7 @@ export class eksStack extends cdk.Stack {
       version: eks.KubernetesVersion.V1_27,
       securityGroup: securityGroupEKS,
       endpointAccess: eks.EndpointAccess.PUBLIC_AND_PRIVATE,
-      clusterName: "eks-sbrc-new-v2",
+      clusterName: "eks-sbrc-new-v3",
       mastersRole: iamRole, //Config
       outputClusterName: true,
       outputConfigCommand: true,
@@ -95,6 +96,14 @@ export class eksStack extends cdk.Stack {
         repository: "public.ecr.aws/eks/aws-load-balancer-controller",
       },
     });
+    new cdk.CfnOutput(this, "EKS Cluster Name", {
+      value: eksCluster.clusterName,
+    });
+    new cdk.CfnOutput(this, "EKS Cluster Arn", {
+      value: eksCluster.clusterArn,
+    });
+
+    console.log(eksCluster);
 
     const fargateProfile = eksCluster.addFargateProfile("MyFargateProfile", {
       selectors: [
@@ -105,6 +114,25 @@ export class eksStack extends cdk.Stack {
 
     const awsAuth = new eks.AwsAuth(this, "MyAwsAuth", {
       cluster: eksCluster,
+    });
+
+    new helm.HelmChart(this, "SBRC-HelmChart", {
+      cluster: eksCluster,
+      chart: "infra/helm_charts",
+      release: "sunbirdRC",
+      values: {
+        "global.secrets.DB_PASSWORD":
+          "aSx6M3NEZ1B6dEV3Mm1eMllrPUVIXkZrbWUsX2Fe",
+        //"global.secrets.ELASTIC_SEARCH_PASSWORD":"abc",
+        //"global.secrets.KEYCLOAK_ADMIN_CLIENT_SECRET":"abc",
+        // "global.secrets.KEYCLOAK_ADMIN_PASSWORD":"password",
+        "global.secrets.MINIO_SECRET_KEY": "QUtJQVZNVk5DUVlDSTNIRTJCWEM=",
+        "global.secrets.access_key":
+          "QzJvenppM3ZRUlVsSndDb1RaWVRjSXBHY0VzSFQ2a00vTyt5MXozVw==",
+        //"global.minio.bucket_key":"abc",
+      },
+      repository:
+        "https://git-codecommit.ap-south-1.amazonaws.com/v1/repos/sunbird-rc-aws-automation", // Helm chart repository URL
     });
   }
 }

@@ -30,13 +30,16 @@ export class rdsStack extends cdk.Stack {
       enableKeyRotation: true, // Optional: Enable key rotation
     });
     const vpcId = cdk.Fn.importValue("SB-RCVPC");
-    console.log("VPCID-->  ", vpcId);
+    console.log("VPCID-->  ", vpcId.toString());
     // const vpcId = ssm.StringParameter.valueFromLookup(
     //   this,
     //   "/VpcProvider/VPCID"
     // );
+    // const vpc = ec2.Vpc.fromLookup(this, "SB-RCVPC", {
+    //   vpcId: "vpc-09c0c359d8d0537c7",
+    // });
     const vpc = ec2.Vpc.fromLookup(this, "SB-RCVPC", {
-      vpcId: "vpc-09c0c359d8d0537c7",
+      vpcId: vpcId.toString(),
     });
 
     // ----------------Security Group Creation Start------------------------

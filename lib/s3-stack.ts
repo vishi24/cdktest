@@ -90,7 +90,7 @@ export class s3Stack extends cdk.Stack {
 
     const myBucket = new s3.Bucket(this, "MyBucket", {
       removalPolicy: cdk.RemovalPolicy.DESTROY, // Only for demo purposes; change to the appropriate removal policy
-      bucketName: "sbrc-registry-17",
+      bucketName: "sbrc-registry-18",
     });
 
     // Define an IAM policy statement that allows PutObject
