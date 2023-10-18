@@ -1,0 +1,51 @@
+global:
+  host: "loadtesting.xix.in" #to be filled
+  database:
+    host: "sbrc-pgsql-db.cluster-cveklit2rj4m.ap-south-1.rds.amazonaws.com"
+    user: "postgres"
+    port: "5432"
+    vendor: "postgres"
+  keycloak:
+    database: "keycloak"
+    admin:
+      username: "admin"
+    proxy_forwarding: true
+  registry:
+    database: "registry" # to be checked
+    search_provider: "dev.sunbirdrc.registry.service.NativeSearchService"
+    #search_provider: "dev.sunbirdrc.registry.service.ElasticSearchService" # to be checked
+    sso:
+      realm: "sunbird-rc"
+      admin_client_id: "admin-api"
+      client_id: "registry-frontend"
+    signature_enabled: true
+    keycloak_user_set_password: false
+    base_apis_enabled: false
+    log_level: INFO
+    enable_external_templates: true
+    enable_async: false
+    enable_authentication: true
+    enable_webhook: false
+    webhook_url: http://localhost:5001/api/v1/callback
+    manager_type: DefinitionsManager
+  minio:
+    url: https://s3.amazonaws.com
+    #access_key: 
+    bucket_key: sbrc-registry
+  elastic_search:
+    url: vpc-sbrc-opensearch-xx7wx6ao7vjyhjgqf54cavv7ie.ap-south-1.es.amazonaws.com:9200
+    auth_enabled: false
+    username: "opensearch"
+  kafka:
+    url: b-2.sbrcmskcluster.k7ypyl.c2.kafka.ap-south-1.amazonaws.com:9098
+  redis:
+    host: sbrc-redis-cache.uzhqox.ng.0001.aps1.cache.amazonaws.com
+    port: 6379
+  secrets:
+    DB_PASSWORD: UGdzcWwxMjM=
+    ELASTIC_SEARCH_PASSWORD: T3BlbnNlYXJjaEAxMjMK
+    KEYCLOAK_ADMIN_CLIENT_SECRET: YzllOTA1YTQtOWIyZi00NWU2LThlMDUtMTNjM2E5NTNmNjUx
+    KEYCLOAK_ADMIN_PASSWORD: YWRtaW4xMjM=
+    KEYCLOAK_DEFAULT_USER_PASSWORD: YWRtaW5AMTIz
+    MINIO_SECRET_KEY: WDRIeDc5RzhRbXpoZWYyaHVqSkVLOFF1WTRtYk4ycTVQWXNZS2M2NA==
+    access_key: QUtJQVZNVk5DUVlDQ0haVVBZV1E=
