@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "admin-ui.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+{{ toYaml .Values.ServiceAnnotations | indent 4 }}
+    service.beta.kubernetes.io/aws-load-balancer-name: sbrc-admin-ui
+  labels:
+    {{- include "admin-ui.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "admin-ui.selectorLabels" . | nindent 4 }}
+    eks.amazonaws.com/fargate-profile: {{ .Release.Namespace }}

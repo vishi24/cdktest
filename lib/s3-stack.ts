@@ -20,7 +20,6 @@ type AwsEnvStackProps = StackProps & {
   config: Readonly<ConfigProps>;
 };
 
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
 export class s3Stack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AwsEnvStackProps) {
     super(scope, id, props);
@@ -61,57 +60,26 @@ export class s3Stack extends cdk.Stack {
       exportName: `${cdk.Aws.STACK_NAME}-UserArn`,
     });
 
-    // // Create an IAM role
-    // const role = new iam.Role(this, "s3role", {
-    //   // assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
-    //   roleName: "sbrcs3Role", // Replace with your desired role name
-    // });
-
-    // Attach a managed policy to the role
-    // role.addManagedPolicy(
-    //   iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonS3FullAccess")
-    // );
-
-    // // Output the role ARN
-    // const roleArnOutput = new cdk.CfnOutput(this, "RoleArn", {
-    //   description: "IAM Role ARN",
-    //   value: role.roleArn,
-    //   exportName: `${cdk.Aws.STACK_NAME}-RoleArn`,
-    // });
-
-    // // Attach the role to the user
-
-    // user.addToPolicy(
-    //   new iam.PolicyStatement({
-    //     actions: ["sts:AssumeRole"],
-    //     resources: [role.roleArn],
-    //   })
-    // );
-
     const myBucket = new s3.Bucket(this, "MyBucket", {
-      removalPolicy: cdk.RemovalPolicy.DESTROY, // Only for demo purposes; change to the appropriate removal policy
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
       bucketName: "sbrc-registry-18",
     });
 
-    // Define an IAM policy statement that allows PutObject
     const putStatement = new iam.PolicyStatement({
       actions: ["s3:PutObject"],
       resources: [`${myBucket.bucketArn}/*`],
     });
 
-    // Define an IAM policy statement that denies DeleteObject
     const denyDeleteStatement = new iam.PolicyStatement({
       actions: ["s3:DeleteObject"],
       resources: [`${myBucket.bucketArn}/*`],
       effect: iam.Effect.DENY,
     });
 
-    // Create an IAM policy with both statements
     const bucketPolicy = new iam.Policy(this, "BucketPolicy", {
       statements: [putStatement, denyDeleteStatement],
     });
 
-    // Attach the policy to the S3 bucket
     myBucket.grantReadWrite(bucketPolicy);
   }
 }

@@ -26,18 +26,22 @@ import { SubnetGroup } from "aws-cdk-lib/aws-rds";
 type AwsEnvStackProps = StackProps & {
   config: Readonly<ConfigProps>;
 };
+export interface VpcStackProps extends cdk.StackProps {
+  config: ConfigProps;
+}
 
 export class vpcStack extends cdk.Stack {
+  public readonly vpc: ec2.Vpc;
   constructor(scope: Construct, id: string, props: AwsEnvStackProps) {
-    //   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     const { config } = props;
     const cidr = config.CIDR;
+    const MAX_AZS = config.MAX_AZS;
 
-    const vpc = new ec2.Vpc(this, "sbrc", {
-      maxAzs: 2, // Use 2 Availability Zones
-      //   cidr: "10.40.0.0/16", //configurable-parameterized
+    // const vpc = new ec2.Vpc(this, "sbrc", {
+    this.vpc = new ec2.Vpc(this, "sbrc", {
+      maxAzs: MAX_AZS,
       cidr: cidr,
       natGateways: 1,
       subnetConfiguration: [
@@ -66,15 +70,10 @@ export class vpcStack extends cdk.Stack {
         },
       },
     });
-    // create an SSM parameters which store export VPC ID
-    // new ssm.StringParameter(this, "VPCID", {
-    //   parameterName: `/VpcProvider/VPCID`,
-    //   stringValue: vpc.vpcId,
-    // });
 
-    new cdk.CfnOutput(this, "ExportedVpcId", {
-      value: vpc.vpcId,
-      exportName: "SB-RCVPC", // This is the name by which it will be imported
-    });
+    // new cdk.CfnOutput(this, "ExportedVpcId", {
+    //   value: vpc.vpcId,
+    //   exportName: "SB-RCVPC", // This is the name by which it will be imported
+    // });
   }
 }

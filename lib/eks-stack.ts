@@ -2,16 +2,10 @@ import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as eks from "aws-cdk-lib/aws-eks";
-import * as rds from "aws-cdk-lib/aws-rds";
-import * as route53 from "aws-cdk-lib/aws-route53";
-import * as s3 from "aws-cdk-lib/aws-s3";
-import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
-import * as kms from "aws-cdk-lib/aws-kms";
 import { ConfigProps } from "./config";
 import { Stack, StackProps } from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as eksconnect from "aws-cdk-lib/aws-eks";
-import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as helm from "aws-cdk-lib/aws-eks";
 
 import {
@@ -27,14 +21,12 @@ type AwsEnvStackProps = StackProps & {
   config: Readonly<ConfigProps>;
 };
 
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
 export class eksStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AwsEnvStackProps) {
-    //   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    // constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
     //const vpcId = cdk.Fn.importValue("SB-RCVPC");
-    const { config } = props;
-
+    const vpc = props.vp;
     // const vpcId = ssm.StringParameter.valueFromLookup(
     //   this,
     //   "/VpcProvider/VPCID"
@@ -46,9 +38,6 @@ export class eksStack extends cdk.Stack {
       vpcId: "vpc-09c0c359d8d0537c7",
     });
 
-    //---------------Security Group Creation Start-------------------------------
-
-    // Create a Security Group - EKS
     const securityGroupEKS = new ec2.SecurityGroup(this, "EKSSecurityGroup", {
       vpc: vpc,
       allowAllOutbound: true,
@@ -58,24 +47,22 @@ export class eksStack extends cdk.Stack {
     // Add inbound rules to the security group - Needs to be checked
 
     securityGroupEKS.addIngressRule(
-      ec2.Peer.ipv4("10.40.0.0/16"), //make configurable
+      // ec2.Peer.ipv4("10.40.0.0/16"), //make configurable
+      ec2.Peer.ipv4(cidr),
       ec2.Port.allTraffic(),
       "Allow RDS traffic"
     );
 
-    //---------------Security Group Creation End-------------------------------
     const iamRole = iam.Role.fromRoleArn(
       this,
       "MyIAMRole",
       "arn:aws:iam::370803901956:role/AWSReservedSSO_AWSAdministratorAccess_2961c11892dc6700"
     );
 
-    // Create an IAM role
     const readonlyRole = new iam.Role(this, "ReadOnlyRole", {
-      assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"), // Example assumed by EC2 instance
+      assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
     });
 
-    // Attach a read-only policy (e.g., ReadOnlyAccess)
     readonlyRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName("ReadOnlyAccess")
     );
@@ -86,8 +73,8 @@ export class eksStack extends cdk.Stack {
       version: eks.KubernetesVersion.V1_27,
       securityGroup: securityGroupEKS,
       endpointAccess: eks.EndpointAccess.PUBLIC_AND_PRIVATE,
-      clusterName: "eks-sbrc-new-v3",
-      mastersRole: iamRole, //Config
+      clusterName: "eks-sbrc-new-v4",
+      mastersRole: iamRole,
       outputClusterName: true,
       outputConfigCommand: true,
       // serviceIpv4Cidr: "10.60.0.0/16",
@@ -102,24 +89,29 @@ export class eksStack extends cdk.Stack {
     new cdk.CfnOutput(this, "EKS Cluster Arn", {
       value: eksCluster.clusterArn,
     });
+    // new cdk.CfnOutput(this, "EKS kubectl role", {
+    //   value: eksCluster.kubectlRole.roleName,
+    // });
 
     console.log(eksCluster);
 
     const fargateProfile = eksCluster.addFargateProfile("MyFargateProfile", {
-      selectors: [
-        //{ namespace: 'kube-system' }, // Add selectors for namespaces
-        { namespace: "sbrc-registry" },
-      ],
+      selectors: [{ namespace: "sbrc-registry" }],
     });
 
     const awsAuth = new eks.AwsAuth(this, "MyAwsAuth", {
       cluster: eksCluster,
     });
 
+    // const ChartdAsset = Asset(this, "ChartdAsset", {
+    //   path: "../helm-deployment/infra/helm_charts",
+    // });
+
     new helm.HelmChart(this, "SBRC-HelmChart", {
       cluster: eksCluster,
-      chart: "infra/helm_charts",
-      release: "sunbirdRC",
+      chart: "helm_charts",
+      // ]chartAsset: ChartdAsset,
+      release: "sunbirdrc",
       values: {
         "global.secrets.DB_PASSWORD":
           "aSx6M3NEZ1B6dEV3Mm1eMllrPUVIXkZrbWUsX2Fe",
@@ -131,11 +123,27 @@ export class eksStack extends cdk.Stack {
           "",
         //"global.minio.bucket_key":"abc",
       },
-      repository:
-        "https://git-codecommit.ap-south-1.amazonaws.com/v1/repos/sunbird-rc-aws-automation", // Helm chart repository URL
+      repository: "https://github.com/vishi24/cdktest.git", // Helm chart repository URL
     });
+    // Define the local path to your Helm chart folder
+    // const helmChartFolder = "./infra/helm_charts";
+
+    // // Create a Helm chart using the local folder as the source
+    // new helm.HelmChart(this, "MyHelmChart", {
+    //   cluster: eksCluster,
+    //   chart: helmChartFolder,
+    //   release: "sunbirdrc",
+    //   values: {
+    //     "global.secrets.DB_PASSWORD":
+    //       "aSx6M3NEZ1B6dEV3Mm1eMllrPUVIXkZrbWUsX2Fe",
+    //     //"global.secrets.ELASTIC_SEARCH_PASSWORD":"abc",
+    //     //"global.secrets.KEYCLOAK_ADMIN_CLIENT_SECRET":"abc",
+    //     // "global.secrets.KEYCLOAK_ADMIN_PASSWORD":"password",
+    //     "global.secrets.MINIO_SECRET_KEY": "",
+    //     "global.secrets.access_key":
+    //       "",
+    //     //"global.minio.bucket_key":"abc",
+    //   },
+    // });
   }
 }
-/////////////////////////////////////////
-// clusterName -- Should come from env file
-//ec2.Peer.ipv4 -- should come from env file

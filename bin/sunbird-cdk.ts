@@ -9,19 +9,19 @@ import { getConfig } from "../lib/config";
 import { ConfigProps } from "../lib/config";
 import { Stack, StackProps } from "aws-cdk-lib";
 import { s3Stack } from "../lib/s3-stack";
+import { helmStack } from "../lib/helm-stack";
 
 const config = getConfig();
 
-// const app = new cdk.App();
-// //new sbrcStack(app, "sbrcStack", config);
-// new sbrcStack(app, "sbrcStack");
-// env: { account: '370803901956', region: 'ap-south-1' },
 const app = new cdk.App();
 type AwsEnvStackProps = StackProps & {
-  config: Readonly<ConfigProps>;
+  config: ConfigProps;
+};
+type AwsEnvStackPropseks = StackProps & {
+  config: ConfigProps;
+  vpc: vpcStack;
 };
 const MY_AWS_ENV_STACK_PROPS: AwsEnvStackProps = {
-  // Define properties here, for example:
   env: {
     region: "ap-south-1",
     account: "370803901956",
@@ -29,10 +29,18 @@ const MY_AWS_ENV_STACK_PROPS: AwsEnvStackProps = {
   config: config,
 };
 
-//new sbrcStack(app, "sbrcStack");
-//const { configs } = config;
-
-new vpcStack(app, "vpcstack", MY_AWS_ENV_STACK_PROPS);
+let infra = new vpcStack(app, "vpcstack", MY_AWS_ENV_STACK_PROPS);
 new rdsStack(app, "rdsstack", MY_AWS_ENV_STACK_PROPS);
-new eksStack(app, "eksstack", MY_AWS_ENV_STACK_PROPS);
+// new eksStack(app, "eksstack", MY_AWS_ENV_STACK_PROPS);
 new s3Stack(app, "s3stack", MY_AWS_ENV_STACK_PROPS);
+new helmStack(app, "helmStack", MY_AWS_ENV_STACK_PROPS);
+
+const MY_AWS_ENV_STACK_PROPS_EKS: AwsEnvStackProps = {
+  env: {
+    region: "ap-south-1",
+    account: "370803901956",
+  },
+  config: config,
+  vpc: null,
+};
+new eksStack(app, "eksstack", MY_AWS_ENV_STACK_PROPS);
